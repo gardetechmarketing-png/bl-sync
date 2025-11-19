@@ -3,7 +3,7 @@ name: Test BaseLinker Inventory Update
 on:
   workflow_dispatch:   # ręczne odpalenie z zakładki Actions
   schedule:
-    - cron: "0 * * * *"   # automatycznie co godzinę (UTC) – możesz zmienić albo usunąć
+    - cron: "0 * * * *"   # automatycznie co godzinę (UTC) – możesz usunąć lub zmienić
 
 jobs:
   update-test-product:
@@ -16,5 +16,4 @@ jobs:
         -H "Content-Type: application/x-www-form-urlencoded" \
         -H "X-BLToken: ${{ secrets.BL_TOKEN }}" \
         --data-urlencode 'method=updateInventoryProductsStock' \
-        'parameters={"inventory_id":53339,"products":[{"product_id":358238153,"variant_id":0,"stock":{"bl_72390":5}}]}'
-
+        --data-urlencode 'parameters={"inventory_id":"53339","products":{"358238153":{"bl_72390":5}}}'
