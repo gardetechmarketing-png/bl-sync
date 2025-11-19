@@ -3,7 +3,7 @@ name: Test BaseLinker Inventory Update
 on:
   workflow_dispatch:   # ręczne odpalenie z zakładki Actions
   schedule:
-    - cron: "0 * * * *"   # automatycznie co godzinę (UTC) – możesz usunąć lub zmienić
+    - cron: "/5 * * * *" 
 
 jobs:
   update-test-product:
