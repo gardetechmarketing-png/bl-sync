@@ -3,7 +3,7 @@ name: Test BaseLinker Inventory Update
 on:
   workflow_dispatch:   # ręczne odpalenie z zakładki Actions
   schedule:
-    - cron: "/1 * * * *" 
+    - cron: "*/1 * * * *" 
 
 jobs:
   update-test-product:
