@@ -1,0 +1,93 @@
+name: SF → BL single product sync
+
+on:
+  workflow_dispatch:   # na razie tylko ręcznie
+
+jobs:
+  sf-to-bl:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Get inventory item from Shoppingfeed
+      run: |
+        # Wpisz ręcznie katalog i inventory item ID z Shoppingfeed:
+        CATALOG_ID="49969"
+        INVENTORY_ITEM_ID="470613589"
+
+        echo "Pobieram z Shoppingfeed:"
+        echo "https://api.shopping-feed.com/v1/catalog/$CATALOG_ID/inventory/$INVENTORY_ITEM_ID"
+
+        curl -sS \
+          -X GET "https://api.shopping-feed.com/v1/catalog/$CATALOG_ID/inventory/$INVENTORY_ITEM_ID" \
+          -H "Authorization: Bearer ${{ secrets.SF_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -o sf.json
+
+        echo "Odpowiedź SF:"
+        cat sf.json
+
+    - name: Build payload.json for BaseLinker
+      env:
+        BL_INVENTORY_ID: "53339"     # inventory_id z BaseLinkera
+        BL_STORAGE_ID: "bl_72390"    # storage_id magazynu BL
+        BL_PRODUCT_ID: "358238153"   # product_id w BL, odpowiada temu produktowi
+      run: |
+        echo "Buduję payload dla BaseLinkera na podstawie sf.json"
+
+        python - << 'EOF'
+        import json
+        import os
+
+        BL_INVENTORY_ID = os.environ["BL_INVENTORY_ID"]
+        BL_STORAGE_ID = os.environ["BL_STORAGE_ID"]
+        BL_PRODUCT_ID = os.environ["BL_PRODUCT_ID"]
+
+        # Wczytaj odpowiedź SF
+        with open("sf.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        # Bierzemy quantity z SF
+        qty = int(data.get("quantity", 0))
+        if qty < 0:
+            qty = 0
+
+        # Budujemy payload dokładnie w takim formacie,
+        # jaki działał u Ciebie w BaseLinkerze:
+        # {
+        #   "inventory_id": "53339",
+        #   "products": {
+        #     "358238153": {
+        #       "bl_72390": 18
+        #     }
+        #   }
+        # }
+
+        payload = {
+            "inventory_id": BL_INVENTORY_ID,
+            "products": {
+                BL_PRODUCT_ID: {
+                    BL_STORAGE_ID: qty
+                }
+            }
+        }
+
+        with open("payload.json", "w", encoding="utf-8") as f:
+            json.dump(payload, f, separators=(",", ":"))
+
+        print("Zbudowany payload:")
+        print(json.dumps(payload, indent=2))
+        EOF
+
+        echo "payload.json:"
+        cat payload.json
+
+    - name: Send payload to BaseLinker
+      run: |
+        echo "Wysyłam do BaseLinkera..."
+        PAYLOAD=$(cat payload.json)
+
+        curl -sS -X POST "https://api.baselinker.com/connector.php" \
+          -H "Content-Type: application/x-www-form-urlencoded" \
+          -H "X-BLToken: ${{ secrets.BL_TOKEN }}" \
+          --data-urlencode "method=updateInventoryProductsStock" \
+          --data-urlencode "parameters=$PAYLOAD"
