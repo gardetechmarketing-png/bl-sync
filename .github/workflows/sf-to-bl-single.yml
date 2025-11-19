@@ -1,7 +1,9 @@
 name: SF → BL single product sync
 
 on:
-  workflow_dispatch:   # na razie tylko ręcznie
+  workflow_dispatch:
+  schedule:
+    - cron: "0 * * * *"
 
 jobs:
   sf-to-bl:
