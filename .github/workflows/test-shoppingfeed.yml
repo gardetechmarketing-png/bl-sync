@@ -1,0 +1,30 @@
+name: Test Shoppingfeed Inventory
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-shoppingfeed:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Call Shoppingfeed API manually
+      run: |
+        # Wpisz wartości ręcznie:
+        CATALOG_ID="49969"
+        INVENTORY_ITEM_ID="470613589"
+
+        echo "Pobieram:"
+        echo "https://api.shopping-feed.com/v1/catalog/$CATALOG_ID/inventory/$INVENTORY_ITEM_ID"
+
+        curl -sS -D - \
+          -X GET "https://api.shopping-feed.com/v1/catalog/$CATALOG_ID/inventory/$INVENTORY_ITEM_ID" \
+          -H "Authorization: Bearer ${{ secrets.SF_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -o sf.json
+
+        echo ""
+        echo "=== Pierwsze 2000 znaków odpowiedzi ==="
+        head -c 2000 sf.json || cat sf.json
+        echo ""
+        echo "=== Koniec ==="
